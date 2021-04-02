@@ -17,7 +17,10 @@ public class Movement : MonoBehaviour
         _cc = GetComponent<CharacterController>();
         _move = new Vector3();
 
-        _ic.onDirChanged.AddListener(MovementProcessing);
+        if (!_ic)
+            Debug.LogWarning($"Movement ({name}): InputController is empty");
+        else
+            _ic.onDirChanged.AddListener(MovementProcessing);
     }
 
     void FixedUpdate()

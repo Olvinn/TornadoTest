@@ -5,25 +5,23 @@ using UnityEngine.UI;
 
 public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    private float _fieldZ = -7;
-
     [SerializeField] InputController _ic;
-    [SerializeField]  Image _field, _stick;
-    [SerializeField]  float _radius = 3;
+    [SerializeField] Image _field, _stick;
+    [SerializeField] float _radius = 3;
 
-    private Vector2 _dir, _prevDir, _fieldStart;
+    private Vector2 _dir, _prevDir;
 
-    void Awake()
+    private void Start()
     {
-        _fieldZ = _field.transform.position.z;
+        if (!_ic)
+            Debug.LogWarning($"Joystick ({name}): InputController is empty");
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        Vector3 fPos = Input.mousePosition;
-        Vector3 sPos = Input.mousePosition;
-        _fieldStart = fPos;
-        fPos.z = _fieldZ;
+        Vector3 fPos = eventData.position;
+        Vector3 sPos = eventData.position;
+        fPos.z = _field.transform.position.z;
         _field.transform.position = fPos;
         _stick.transform.position = sPos;
         _dir = Vector2.zero;
@@ -33,10 +31,7 @@ public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
 
     public void OnDrag(PointerEventData eventData)
     {
-        Vector3 sPos = Input.mousePosition;
-        Vector3 resultFieldPos = _fieldStart;
-        resultFieldPos.z = _fieldZ;
-        _field.transform.position = resultFieldPos;
+        Vector3 sPos = eventData.position;
 
         if ((sPos - _field.transform.position).magnitude > _radius)
         {
@@ -56,7 +51,6 @@ public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        _fieldStart = Vector3.zero;
         _dir = Vector2.zero;
         StopAllCoroutines();
         StartCoroutine(FadeOut());

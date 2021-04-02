@@ -9,11 +9,17 @@ public class CameraFollower : MonoBehaviour
 {
     public Transform target;
     public Vector3 offset;
-    Transform _camera;
+    public float lerpSpeed = 10;
+
+    private void Start()
+    {
+        if (!target)
+            Debug.LogWarning($"CameraFollower ({name}): target is empty");
+    }
 
     void LateUpdate()
     {
         if (target)
-            transform.position = Vector3.Lerp(transform.position, target.position + offset, Time.deltaTime * 10);
+            transform.position = Vector3.Lerp(transform.position, target.position + offset, Time.deltaTime * lerpSpeed);
     }
 }
