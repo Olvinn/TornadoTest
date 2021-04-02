@@ -7,45 +7,46 @@ public class Movement : MonoBehaviour
 {
     public float speed;
 
-    [SerializeField] Joystick joystick;
+    [SerializeField] InputController _ic;
     CharacterController _cc;
-    Vector3 move;
-    float movY;
+    Vector3 _move;
+    float _movY;
 
     void Start()
     {
         _cc = GetComponent<CharacterController>();
-        move = new Vector3();
+        _move = new Vector3();
+
+        _ic.onDirChanged.AddListener(MovementProcessing);
     }
 
     void Update()
     {
-        MovementProcessing();
         FallingProcessing();
 
-        _cc.Move(move);
+        _cc.Move(_move);
     }
 
-    void MovementProcessing()
+    void MovementProcessing(Vector2 dir)
     {
-        float h = joystick.axis.x;
-        float v = joystick.axis.y;
+        float h = dir.x;
+        float v = dir.y;
 
         Vector3 newMove = transform.localToWorldMatrix * new Vector3(h, 0, v);
         newMove.y = 0;
-        float y = move.y;
-        move = newMove * speed * Time.deltaTime;
-        move.y = y;
+        float y = _move.y;
+        _move = newMove * speed * Time.deltaTime;
+        _move.y = y;
     }
 
     void FallingProcessing()
     {
         if (_cc.isGrounded)
         {
-            movY = -.01f;
+            _movY = -.01f;
         }
         else
-            movY -= Physics.gravity.magnitude * Time.deltaTime;
-        move.y = movY * Time.deltaTime;
+            _movY -= Physics.gravity.magnitude * Time.deltaTime;
+        _move.y = _movY * Time.deltaTime;
     }
 }

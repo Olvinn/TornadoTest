@@ -3,189 +3,101 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class Joystick : MonoBehaviour
+public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    public Vector2 axis { get { return _axis; } }
+    private float _fieldZ = -7;
 
-    private float fieldZ = -7;
+    [SerializeField] InputController _ic;
+    [SerializeField]  Image _field, _stick;
+    [SerializeField]  float _radius = 3;
 
-    [SerializeField]              private Image stick;
-    [SerializeField]              private float radius = 3;
-    [SerializeField]              private Camera relativeCamera;
-
-    private Vector2 _axis, fieldStart;
-    private Image field;
-    private int fingerId;
+    private Vector2 _dir, _oldDir, _fieldStart;
 
     void Awake()
     {
-        field = GetComponent<Image>();
-        fingerId = -1;
-        fieldZ = transform.position.z;
+        _fieldZ = _field.transform.position.z;
     }
 
-    void Update()
+    public void OnBeginDrag(PointerEventData eventData)
     {
-        //ProcessTouches();
-        if (fingerId == -1)
-            ProcessClick();
+        Vector3 fPos = Input.mousePosition;
+        Vector3 sPos = Input.mousePosition;
+        _fieldStart = fPos;
+        fPos.z = _fieldZ;
+        _field.transform.position = fPos;
+        _stick.transform.position = sPos;
+        _dir = Vector2.zero;
+        StopAllCoroutines();
+        StartCoroutine(FadeIn());
     }
 
-    public void SetVisible(bool value)
+    public void OnDrag(PointerEventData eventData)
     {
-        Color goal = field.color;
-        goal.a = value ? .75f : 0;
-        stick.color = goal;
-        goal.a = value ? .25f : 0;
-        field.color = goal;
+        Vector3 sPos = Input.mousePosition;
+        Vector3 resultFieldPos = _fieldStart;
+        resultFieldPos.z = _fieldZ;
+        _field.transform.position = resultFieldPos;
+
+        if ((sPos - _field.transform.position).magnitude > _radius)
+        {
+            _stick.transform.position = _field.transform.position + (sPos - _field.transform.position).normalized * _radius;
+        }
+        else
+        {
+            _stick.transform.position = sPos;
+        }
+
+        _oldDir = _dir;
+        _dir = (_stick.transform.position - _field.transform.position).normalized * Vector3.Distance(_stick.transform.position, _field.transform.position) / _radius;
+
+        if (_oldDir != _dir)
+            _ic.onDirChanged?.Invoke(_dir);
     }
 
-    private void ProcessClick()
+    public void OnEndDrag(PointerEventData eventData)
     {
-        if (Input.GetButtonDown("Fire1"))
-        {
-            if (EventSystem.current.currentSelectedGameObject == null || EventSystem.current.currentSelectedGameObject == gameObject)
-            {
-                Vector3 fPos = Input.mousePosition;
-                Vector3 sPos = Input.mousePosition;
-                fieldStart = fPos;
-                fPos.z = fieldZ;
-                transform.position = fPos;
-                stick.transform.position = sPos;
-                _axis = Vector2.zero;
-                StopAllCoroutines();
-                StartCoroutine(FadeIn());
-            }
-        }
-        else if (Input.GetButtonUp("Fire1"))
-        {
-            fieldStart = Vector3.zero;
-            _axis = Vector2.zero;
-            StopAllCoroutines();
-            StartCoroutine(FadeOut());
-        }
-        else if (Input.GetButton("Fire1"))
-        {
-            if (fieldStart != Vector2.zero)
-            {
-                Vector3 sPos = Input.mousePosition;
-                Vector3 resultFieldPos = fieldStart;
-                resultFieldPos.z = fieldZ;
-                transform.position = resultFieldPos;
+        _fieldStart = Vector3.zero;
+        _dir = Vector2.zero;
+        _oldDir = Vector2.zero;
+        StopAllCoroutines();
+        StartCoroutine(FadeOut());
 
-                if ((sPos - transform.position).magnitude > radius)
-                {
-                    stick.transform.position = transform.position + (sPos - transform.position).normalized * radius;
-                }
-                else
-                {
-                    stick.transform.position = sPos;
-                }
-
-                _axis = (stick.transform.position - transform.position).normalized * Vector3.Distance(stick.transform.position, transform.position) / radius;
-            }
-        }
+        _ic.onDirChanged?.Invoke(Vector2.zero);
     }
-
-    //private void ProcessTouches()
-    //{
-    //    foreach (Touch touch in Input.touches)
-    //    {
-    //        switch (touch.phase)
-    //        {
-    //            case TouchPhase.Began:
-    //                {
-    //                    if (fingerId == -1 && (EventSystem.current.currentSelectedGameObject == null || EventSystem.current.currentSelectedGameObject == gameObject))
-    //                    {
-    //                        Vector3 fPos = touch.position;
-    //                        Vector3 sPos = touch.position;
-    //                        fieldStart = fPos;
-    //                        fPos.z = fieldZ;
-    //                        transform.position = fPos;
-    //                        stick.transform.position = sPos;
-    //                        fingerId = touch.fingerId;
-    //                        _axis = Vector2.zero;
-    //                        StopAllCoroutines();
-    //                        StartCoroutine(FadeIn());
-    //                    }
-    //                    break;
-    //                }
-    //            case TouchPhase.Canceled:
-    //            case TouchPhase.Ended:
-    //                {
-    //                    if (fingerId != -1 && touch.fingerId == fingerId)
-    //                    {
-    //                        //stick.transform.position = transform.position;
-    //                        fingerId = -1;
-    //                        _axis = Vector2.zero;
-    //                        StopAllCoroutines();
-    //                        StartCoroutine(FadeOut());
-    //                    }
-    //                    break;
-    //                }
-    //            case TouchPhase.Moved:
-    //            case TouchPhase.Stationary:
-    //                {
-    //                    if (fingerId != -1 && touch.fingerId == fingerId)
-    //                    {
-    //                        Vector3 sPos = touch.position;
-    //                        Vector3 resultFieldPos = (Vector3)fieldStart;
-    //                        resultFieldPos.z = fieldZ;
-    //                        transform.position = resultFieldPos;
-
-    //                        _axis = (sPos - transform.position).normalized;
-
-    //                        if ((sPos - transform.position).magnitude > radius)
-    //                        {
-    //                            stick.transform.position = transform.position + (sPos - transform.position).normalized * radius;
-    //                        }
-    //                        else
-    //                        {
-    //                            stick.transform.position = sPos;
-    //                        }
-    //                    }
-    //                    break;
-    //                }
-    //        }
-    //    }
-    //    Vector3 pos = stick.transform.position;
-    //    pos.z = field.transform.position.z - .1f;
-    //    stick.transform.position = pos;
-    //}
 
     private IEnumerator FadeIn()
     {
         Color goal;
-        while (stick.color.a < .7f)
+        while (_stick.color.a < .7f)
         {
-            goal = field.color;
+            goal = _field.color;
             goal.a = .75f;
-            stick.color = Color.Lerp(stick.color, goal, Time.unscaledDeltaTime * 20);
+            _stick.color = Color.Lerp(_stick.color, goal, Time.unscaledDeltaTime * 20);
             goal.a = .25f;
-            field.color = Color.Lerp(field.color, goal, Time.unscaledDeltaTime * 20);
+            _field.color = Color.Lerp(_field.color, goal, Time.unscaledDeltaTime * 20);
             yield return new WaitForEndOfFrame();
         }
-        goal = field.color;
+        goal = _field.color;
         goal.a = .75f;
-        stick.color = goal;
+        _stick.color = goal;
         goal.a = .25f;
-        field.color = goal;
+        _field.color = goal;
     }
 
     private IEnumerator FadeOut()
     {
         Color goal;
-        while (field.color.a > .05f)
+        while (_field.color.a > .05f)
         {
-            goal = field.color;
+            goal = _field.color;
             goal.a = 0;
-            field.color = Color.Lerp(field.color, goal, Time.unscaledDeltaTime * 5);
-            stick.color = field.color;
+            _field.color = Color.Lerp(_field.color, goal, Time.unscaledDeltaTime * 5);
+            _stick.color = _field.color;
             yield return new WaitForEndOfFrame();
         }
-        goal = field.color;
+        goal = _field.color;
         goal.a = 0;
-        stick.color = goal;
-        field.color = goal;
+        _stick.color = goal;
+        _field.color = goal;
     }
 }
