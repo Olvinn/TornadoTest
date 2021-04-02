@@ -11,7 +11,7 @@ public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
     [SerializeField]  Image _field, _stick;
     [SerializeField]  float _radius = 3;
 
-    private Vector2 _dir, _fieldStart;
+    private Vector2 _dir, _prevDir, _fieldStart;
 
     void Awake()
     {
@@ -47,9 +47,11 @@ public class Joystick : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
             _stick.transform.position = sPos;
         }
 
+        _prevDir = _dir;
         _dir = (_stick.transform.position - _field.transform.position) / _radius;
 
-        _ic.onDirChanged?.Invoke(_dir);
+        if (_prevDir != _dir)
+            _ic.onDirChanged?.Invoke(_dir);
     }
 
     public void OnEndDrag(PointerEventData eventData)
