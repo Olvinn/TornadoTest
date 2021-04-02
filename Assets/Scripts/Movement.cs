@@ -20,7 +20,7 @@ public class Movement : MonoBehaviour
         _ic.onDirChanged.AddListener(MovementProcessing);
     }
 
-    void Update()
+    void FixedUpdate()
     {
         FallingProcessing();
 
@@ -29,22 +29,23 @@ public class Movement : MonoBehaviour
 
     void MovementProcessing(Vector2 dir)
     {
+        if (dir.magnitude > 1)
+            dir.Normalize();
+
         float h = dir.x;
         float v = dir.y;
 
         Vector3 newMove = transform.localToWorldMatrix * new Vector3(h, 0, v);
         newMove.y = 0;
         float y = _move.y;
-        _move = newMove * speed * Time.deltaTime;
+        _move = newMove * speed * Time.fixedDeltaTime;
         _move.y = y;
     }
 
     void FallingProcessing()
     {
         if (_cc.isGrounded)
-        {
             _movY = -.01f;
-        }
         else
             _movY -= Physics.gravity.magnitude * Time.deltaTime;
         _move.y = _movY * Time.deltaTime;
